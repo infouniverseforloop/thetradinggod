@@ -369,4 +369,58 @@ if(localStorage.getItem('tg_stop')==='false') stopOnLoss.checked=false;
 log('Frontend ready. Connect backend and start.');
 </script>
 </body>
+<!-- Frontend snippet: use this to replace showSignal/startCountdown logic -->
+<script>
+let ws = null;
+function connectWS(url){
+  ws = new WebSocket(url);
+  ws.onopen = ()=> console.log('ws open');
+  ws.onmessage = ev => {
+    try {
+      const msg = JSON.parse(ev.data);
+      if(msg.type === 'signal') onSignal(msg.data);
+      else if(msg.type === 'info') console.log('info', msg);
+      else if(msg.type === 'log') addLog(msg.data);
+    } catch(e){ console.warn(e); }
+  };
+}
+function onSignal(sig){
+  // render UI fields
+  document.getElementById('pair').textContent = sig.symbol;
+  document.getElementById('direction').textContent = sig.direction;
+  document.getElementById('entry').textContent = sig.entry;
+  document.getElementById('barFill').style.width = sig.confidence + '%';
+  addLog(`Signal: ${sig.symbol} ${sig.direction} conf ${sig.confidence}%`);
+
+  // compute countdown using expiry_at (server timestamp)
+  const expiry = new Date(sig.expiry_at).getTime();
+  // compute client-server diff if server_time provided (optional); otherwise use local clock
+  // start ticking to expiry exact
+  startCountdownTo(expiry);
+}
+
+let countdownInterval = null;
+function startCountdownTo(expiryAtMillis){
+  clearInterval(countdownInterval);
+  function update(){
+    const now = Date.now();
+    const remMs = expiryAtMillis - now;
+    if(remMs <= 0){
+      document.getElementById('countdown').textContent = 'TRADE CLOSED';
+      clearInterval(countdownInterval);
+      // show "result" when backend sends or simulate after a short delay
+      return;
+    }
+    const s = Math.ceil(remMs/1000);
+    document.getElementById('countdown').textContent = s + 's';
+  }
+  update();
+  countdownInterval = setInterval(update, 300);
+}
+
+function addLog(txt){
+  const logs = document.getElementById('logs');
+  logs.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${txt}</div>` + logs.innerHTML;
+}
+</script>
   </html>
