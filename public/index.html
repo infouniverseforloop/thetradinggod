@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The Trading God — Live Sniper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#f5c518;--bg:#050507;--card:#0f1113;--muted:#bfbfbf}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#050507,#0b0c0e);color:var(--gold);font-family:'Inter',Arial,Helvetica,sans-serif}
+.container{max-width:1100px;margin:18px auto;padding:18px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--gold),#ffd94d);display:flex;align-items:center;justify-content:center;font-weight:800;color:#070707}
+h1{margin:0;font-size:20px;color:#fff}
+.sub{color:#ddd;font-size:13px;margin-top:4px}
+.grid{display:grid;grid-template-columns:1fr 380px;gap:16px;margin-top:18px}
+.card{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(245,197,24,0.06)}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{background:var(--gold);border:none;color:#070707;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.select, input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+.line{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.02)}
+.line:last-child{border-bottom:none}
+.bar{height:14px;background:#222;border-radius:8px;overflow:hidden}
+.bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),#ffd94d);transition:width 0.8s}
+.badge{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:8px;color:#fff;font-weight:700}
+.logs{height:300px;overflow:auto;background:#060607;padding:10px;border-radius:8px;color:#ddd;font-size:13px}
+.small{font-size:13px;color:#ccc}
+.footer{margin-top:12px;color:#bbb;text-align:center;font-size:13px}
+@media(max-width:900px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">TTG</div>
+        <div>
+          <h1>The Trading God — Binary & Forex Sniper</h1>
+          <div class="sub">Ultra premium • 1-min binary expiry • Auto pair selection • Auto‑learning placeholders</div>
+        </div>
+      </div>
+      <div class="small" id="tz-info">Detecting time zone...</div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: SIGNAL DISPLAY -->
+      <div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="small">Server Time:</div>
+              <div id="srvTime" class="small">--:--:--</div>
+            </div>
+            <div style="text-align:right">
+              <div class="small">BDT (UTC+6):</div>
+              <div id="bdTime" class="small">--:--:--</div>
+            </div>
+          </div>
+
+          <h2 id="signal-title" style="margin:12px 0 6px 0;color:#fff">No signal yet — Click Start</h2>
+
+          <div class="line"><div>Market</div><div id="marketType" class="badge">-</div></div>
+          <div class="line"><div>Pair</div><div id="pair" class="badge">-</div></div>
+          <div class="line"><div>Direction</div><div id="direction" class="badge">-</div></div>
+          <div class="line"><div>Entry</div><div id="entry" class="small">-</div></div>
+          <div class="line">
+            <div style="flex:1;margin-right:12px">
+              <div class="small">Confidence</div>
+              <div class="bar"><div id="barFill" class="bar-fill"></div></div>
+            </div>
+            <div style="width:110px;text-align:right">
+              <div class="small">MTG</div>
+              <div id="mtg" class="badge">-</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+            <div id="countdown" class="badge">--s</div>
+            <div id="result" class="badge" style="background:rgba(0,0,0,0.45);color:#fff">Result: -</div>
+            <div style="margin-left:auto" id="safety" class="small">Safety: Stop-on-Loss recommended for Auto</div>
+          </div>
+
+          <div style="margin-top:12px" class="controls">
+            <button id="startBtn">Start Signal</button>
+            <button id="nextBtn" disabled>Next Signal</button>
+
+            <label style="display:flex;align-items:center;gap:8px" class="small">
+              <input type="checkbox" id="autoMode"> Auto Mode
+            </label>
+            <label style="display:flex;align-items:center;gap:8px" class="small">
+              <input type="checkbox" id="stopOnLoss" checked> Stop on Loss
+            </label>
+
+            <select id="marketSelect" class="select">
+              <option value="binary">Binary (1-min)</option>
+              <option value="forex">Forex (scalp)</option>
+            </select>
+            <select id="pairSelect" class="select"></select>
+            <button id="reqNow">Request Now</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <strong>Add Broker / Pair (Local)</strong>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input id="brokerInput" placeholder="e.g. EUR/USD" />
+            <select id="brokerType" class="select"><option>Real</option><option>OTC</option></select>
+            <button id="addBrokerBtn">Add Broker</button>
+          </div>
+          <div id="brokerList" style="margin-top:10px" class="small"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: LOGS & INFO -->
+      <div>
+        <div class="card">
+          <strong>Logs & Audit</strong>
+          <div id="logs" class="logs"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <strong>System Info</strong>
+          <div style="margin-top:8px" class="small">Frontend: Static (Netlify). Backend: WebSocket server (Render/VPS). Replace the WS URL in this file before deploy.</div>
+          <div style="margin-top:8px" class="small">Broker integration: provide your broker tick feed / API, follow README to plug into server.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Contact admin: @ttg_mamun — Use Stop on Loss = ON when Auto Mode enabled</div>
+  </div>
+
+<script>
+/* ========================
+  Frontend WebSocket logic
+=========================*/
+
+// CONFIG: replace with your deployed backend WebSocket URL (wss://...)
+const WS_URL = "wss://REPLACE_WITH_YOUR_BACKEND_URL"; // <<-- set this to your backend after deployment
+
+let ws;
+function connectWS(){
+  try {
+    ws = new WebSocket(WS_URL);
+  } catch(e){
+    log('WebSocket init error: '+e.message);
+    return;
+  }
+
+  ws.onopen = ()=>{ log('Connected to backend'); };
+  ws.onclose = ()=>{ log('WS closed — reconnecting in 3s'); setTimeout(connectWS,3000); };
+  ws.onerror = (e)=>{ log('WS error'); };
+  ws.onmessage = (ev)=>{
+    try {
+      const m = JSON.parse(ev.data);
+      if(m.type === 'signal') handleSignal(m.data);
+      else if(m.type === 'log') log(m.data);
+      else if(m.type === 'info') log('info: '+m.data);
+    } catch(err){ log('parse err: '+err.message); }
+  };
+}
+connectWS();
+
+/* UI elements */
+const startBtn = document.getElementById('startBtn');
+const nextBtn = document.getElementById('nextBtn');
+const reqNow = document.getElementById('reqNow');
+const autoMode = document.getElementById('autoMode');
+const stopOnLoss = document.getElementById('stopOnLoss');
+const startMarket = document.getElementById('marketSelect');
+const pairSelect = document.getElementById('pairSelect');
+const pairEl = document.getElementById('pair');
+const dirEl = document.getElementById('direction');
+const entryEl = document.getElementById('entry');
+const barFill = document.getElementById('barFill');
+const mtgEl = document.getElementById('mtg');
+const countdownEl = document.getElementById('countdown');
+const resultEl = document.getElementById('result');
+const logsEl = document.getElementById('logs');
+const brokerListEl = document.getElementById('brokerList');
+const tzInfo = document.getElementById('tz-info');
+const bdTimeEl = document.getElementById('bdTime');
+const srvTimeEl = document.getElementById('srvTime');
+const safetyEl = document.getElementById('safety');
+
+/* state */
+let signalsQueue = [];
+let currentIndex = -1;
+let countdownTimer = null;
+let autoRunning = false;
+
+/* helpers */
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  logsEl.innerHTML = `<div>[${t}] ${msg}</div>` + logsEl.innerHTML;
+}
+function setTimeDisplays(){
+  const now = new Date();
+  srvTimeEl.textContent = now.toLocaleTimeString();
+  const bd = new Date(now.getTime() + 6*60*60*1000);
+  bdTimeEl.textContent = bd.toLocaleTimeString();
+  tzInfo.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown TZ';
+}
+setInterval(setTimeDisplays,1000);
+setTimeDisplays();
+
+/* local brokers persistence */
+function loadBrokers(){
+  const arr = JSON.parse(localStorage.getItem('tg_brokers')||'[]');
+  brokerListEl.innerHTML = '';
+  pairSelect.innerHTML = '';
+  arr.forEach(x=>{
+    const d = document.createElement('div'); d.textContent = `${x.pair} (${x.type})`; brokerListEl.appendChild(d);
+    const opt = document.createElement('option'); opt.value = x.pair; opt.textContent = x.pair; pairSelect.appendChild(opt);
+  });
+  if(arr.length===0){
+    ['EUR/USD','GBP/USD','USD/JPY','BTC/USD'].forEach(p=>{
+      const opt = document.createElement('option'); opt.value = p; opt.textContent = p; pairSelect.appendChild(opt);
+    });
+  }
+}
+document.getElementById('addBrokerBtn').addEventListener('click', ()=>{
+  const p = document.getElementById('brokerInput').value.trim();
+  const t = document.getElementById('brokerType').value;
+  if(!p) return;
+  const list = JSON.parse(localStorage.getItem('tg_brokers')||'[]');
+  list.push({pair:p,type:t});
+  localStorage.setItem('tg_brokers', JSON.stringify(list));
+  document.getElementById('brokerInput').value='';
+  loadBrokers();
+});
+loadBrokers();
+
+/* handle incoming signal */
+function handleSignal(s){
+  // s: { market, symbol, direction, entry, confidence, mtg, notes, time }
+  signalsQueue.push(s);
+  log(`Queued signal ${s.symbol} ${s.direction} [${s.confidence}%]`);
+  // if nothing displaying, auto show if auto mode OR user pressed Start
+  if(currentIndex === -1 && autoMode.checked){
+    nextSignalAuto();
+  }
+}
+
+/* render one signal */
+function renderSignalAt(i){
+  if(i<0 || i>=signalsQueue.length){
+    document.getElementById('signal-title').textContent = 'No signal yet — Click Start';
+    pairEl.textContent = '-'; dirEl.textContent='-'; entryEl.textContent='-'; barFill.style.width='0%';
+    countdownEl.textContent='--s'; resultEl.textContent='Result: -'; mtgEl.textContent='-';
+    return;
+  }
+  const s = signalsQueue[i];
+  document.getElementById('signal-title').textContent = `Signal #${i+1}`;
+  document.getElementById('marketType').textContent = s.market || 'binary';
+  pairEl.textContent = s.symbol;
+  dirEl.textContent = s.direction;
+  entryEl.textContent = s.entry;
+  barFill.style.width = (s.confidence || 50) + '%';
+  mtgEl.textContent = s.mtg ? 'Suggested' : 'No';
+  resultEl.textContent = 'Result: -';
+  log(`Displayed: ${s.symbol} ${s.direction} (conf ${s.confidence}%)`);
+}
+
+/* countdown & resolve */
+function startCountdown(seconds=60){
+  clearInterval(countdownTimer);
+  let rem = seconds;
+  countdownEl.textContent = rem+'s';
+  countdownTimer = setInterval(()=>{
+    rem--;
+    countdownEl.textContent = (rem>0? rem+'s':'0s');
+    if(rem<=0){
+      clearInterval(countdownTimer);
+      // resolve
+      resolveCurrentSignal();
+    }
+  },1000);
+}
+
+/* resolve (simulation until broker feed integrated) */
+function resolveCurrentSignal(){
+  const s = signalsQueue[currentIndex];
+  if(!s) return;
+  // simulated probabilistic result: chance = confidence%
+  const rnd = Math.random()*100;
+  const win = rnd <= (s.confidence || 50);
+  resultEl.textContent = 'Result: ' + (win ? 'WIN' : 'LOSS');
+  log(`Result: ${s.symbol} => ${win ? 'WIN' : 'LOSS'} (conf ${s.confidence}%)`);
+  nextBtn.disabled = false;
+  // auto behaviour
+  if(autoMode.checked){
+    if(!win && stopOnLoss.checked){
+      autoMode.checked = false;
+      log('Auto stopped due to LOSS and Stop-on-Loss ON.');
+      alert('Auto stopped due to LOSS and Stop-on-Loss ON.');
+      return;
+    }
+    setTimeout(()=> nextSignalAuto(), 1200);
+  }
+}
+
+/* user actions */
+startBtn.addEventListener('click', ()=>{
+  // if queue empty: request now
+  if(signalsQueue.length===0){
+    sendReqNow();
+    return;
+  }
+  // else show first queued
+  currentIndex = 0;
+  renderSignalAt(currentIndex);
+  nextBtn.disabled = true;
+  startCountdown(startMarket.value==='binary'?60:300);
+});
+nextBtn.addEventListener('click', ()=>{
+  // advance to next in queue
+  if(currentIndex < signalsQueue.length -1){
+    currentIndex++;
+    renderSignalAt(currentIndex);
+    nextBtn.disabled = true;
+    startCountdown(startMarket.value==='binary'?60:300);
+  } else {
+    // if no more queued, request new
+    sendReqNow();
+  }
+});
+function nextSignalAuto(){
+  // if nothing queued -> request one
+  if(signalsQueue.length === 0){
+    sendReqNow();
+    return;
+  }
+  // if last displayed and more queued -> advance
+  if(currentIndex < signalsQueue.length -1){
+    currentIndex++;
+  } else {
+    currentIndex = signalsQueue.length -1;
+  }
+  renderSignalAt(currentIndex);
+  nextBtn.disabled = true;
+  startCountdown(startMarket.value==='binary'?60:300);
+}
+
+/* Request immediate signal from backend */
+function sendReqNow(){
+  if(!ws || ws.readyState !== WebSocket.OPEN){
+    log('WS not connected — cannot request now');
+    return;
+  }
+  const payload = { type:'reqSignalNow', market: startMarket.value, pair: pairSelect.value || null };
+  ws.send(JSON.stringify(payload));
+  log('Requested immediate signal from backend');
+}
+
+/* UI wiring */
+reqNow.addEventListener('click', sendReqNow);
+
+/* persist auto settings */
+autoMode.addEventListener('change', ()=> localStorage.setItem('tg_auto', autoMode.checked));
+stopOnLoss.addEventListener('change', ()=> localStorage.setItem('tg_stop', stopOnLoss.checked));
+if(localStorage.getItem('tg_auto')==='true') autoMode.checked=true;
+if(localStorage.getItem('tg_stop')==='false') stopOnLoss.checked=false;
+
+/* initial */
+log('Frontend ready. Connect backend and start.');
+</script>
+</body>
+  </html>
